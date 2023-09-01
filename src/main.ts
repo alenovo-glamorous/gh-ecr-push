@@ -3,39 +3,34 @@ import { getImagesToPush } from './images';
 import { run } from './utils';
 import { loginToEcr } from 'gh-ecr-login';
 
-const AWS_ACCESS_KEY_ID = core.getInput('access-key-id', { required: true });
-const AWS_SECRET_ACCESS_KEY = core.getInput('secret-access-key', { required: true });
-const image = core.getInput('image', { required: true });
-const localImage = core.getInput('local-image') || image;
+const SOURCE_AWS_ACCESS_KEY_ID = core.getInput('source-access-key-id', { required: true });
+const SOURCE_AWS_SECRET_ACCESS_KEY = core.getInput('source-secret-access-key', { required: true });
+
+const DEST_AWS_ACCESS_KEY_ID = core.getInput('dest-access-key-id', { required: true });
+const DEST_AWS_SECRET_ACCESS_KEY = core.getInput('dest-secret-access-key', { required: true });
+
 const awsRegion = core.getInput('region') || process.env.AWS_DEFAULT_REGION || 'us-east-1';
-const direction = core.getInput('direction') || 'push';
-const isSemver = !!core.getInput('is-semver');
 
-const { awsAccountId } = loginToEcr(awsRegion, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
+const images = core.getInput('images', { required: true });
 
-let imageUrl;
+const sourceLoginResult = loginToEcr(awsRegion, SOURCE_AWS_ACCESS_KEY_ID, SOURCE_AWS_SECRET_ACCESS_KEY);
+const destLoginResult = loginToEcr(awsRegion, DEST_AWS_ACCESS_KEY_ID, DEST_AWS_SECRET_ACCESS_KEY);
 
-const images = image.split(',').map((i: string) => i.trim());
+const sourceAwsAccountId = sourceLoginResult.awsAccountId;
+const destAwsAccountId = destLoginResult.awsAccountId;
 
-if (direction === 'push') {
-    const imagesToPush = image.split(',').map((i: string) => i.trim());
-    for (const imageToPush of images) {
-        const uri = `${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${imageToPush}`;
-        console.log(`Pushing local image ${imageToPush} to ${uri}`);
-        run(`docker tag ${imageToPush} ${uri}`);
-        run(`docker push ${uri}`);
-        imageUrl = uri;
-    }
-} else if (direction == 'pull') {
-    for (const imageToPull of images) {
-        const uri = `${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${imageToPull}`;
-        console.log(`Pulling remote image ${uri} as ${imageToPull}`);
-        run(`docker pull ${uri}`);
-        run(`docker tag ${uri} ${imageToPull}`);
-        imageUrl = uri;
-    }
-} else {
-    throw new Error(`Unknown direction ${direction}`);
+const imageList = images.split(',').map((i: string) => i.trim());
+
+for (const image of imageList) {
+  const sourceUri = `${sourceAwsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${image}`;
+  console.log(`Pulling remote image ${sourceUri} as ${image}`);
+  run(`docker pull ${sourceUri}`);
+  run(`docker tag ${sourceUri} ${image}`);
+
+  const destUri = `${destAwsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${image}`;
+  console.log(`Pushing local image ${image} to ${destUri}`);
+  run(`docker tag ${image} ${destUri}`);
+  run(`docker push ${destUri}`);
+  run(`docker rmi ${image}`);
 }
 
-core.setOutput('imageUrl', imageUrl);
