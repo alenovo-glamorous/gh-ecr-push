@@ -31,8 +31,15 @@ for (const image of imageList) {
   console.log(`Pushing local image ${image} to ${destUri}`);
   run(`docker tag ${image} ${destUri}`);
   run(`docker push ${destUri}`);
+
   run(`docker rmi ${image}`);
-  run(`docker system prune -a`);
-  run(`docker volume prune`);
+  run(`docker system prune -a --volumes -f`);
+  run(`docker image prune -a -f`);
+  run(`docker volume prune -a -f`);
+  run(`docker container prune -f`);
+  run(`docker builder prune -a -f`);
+
+  run(`docker image ls`);
+  run(`docker system df`);
 }
 

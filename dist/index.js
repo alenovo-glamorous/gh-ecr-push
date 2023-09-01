@@ -2778,8 +2778,13 @@ for (const image of imageList) {
     (0, utils_1.run)(`docker tag ${image} ${destUri}`);
     (0, utils_1.run)(`docker push ${destUri}`);
     (0, utils_1.run)(`docker rmi ${image}`);
-    (0, utils_1.run)(`docker system prune -a`);
-    (0, utils_1.run)(`docker volume prune`);
+    (0, utils_1.run)(`docker system prune -a --volumes -f`);
+    (0, utils_1.run)(`docker image prune -a -f`);
+    (0, utils_1.run)(`docker volume prune -a -f`);
+    (0, utils_1.run)(`docker container prune -f`);
+    (0, utils_1.run)(`docker builder prune -a -f`);
+    (0, utils_1.run)(`docker image ls`);
+    (0, utils_1.run)(`docker system df`);
 }
 
 
