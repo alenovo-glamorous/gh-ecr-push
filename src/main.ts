@@ -32,5 +32,6 @@ for (const image of imageList) {
   run(`docker tag ${image} ${destUri}`);
   run(`docker push ${destUri}`);
   run(`docker rmi ${image}`);
+  run(`docker system prune -f`);
 }
 
