@@ -14,33 +14,27 @@ const isSemver = !!core.getInput('is-semver');
 const { awsAccountId } = loginToEcr(awsRegion, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
 
 let imageUrl;
-if (localImage.includes(',')) {
-    if (!core.getInput('local-image')) {
-        throw new Error('local-image must be specified if image is a list.');
-    } else {
-        throw new Error('local-image may not be a list of images.');
-    }
-}
+
+const images = image.split(',').map((i: string) => i.trim());
 
 if (direction === 'push') {
-    const imagesToPush = getImagesToPush(localImage, image, isSemver);
-    for (const imageToPush of imagesToPush) {
-        const uri = `${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${imageToPush.remoteImage}`;
-        console.log(`Pushing local image ${imageToPush.localImage} to ${uri}`);
-        run(`docker tag ${imageToPush.localImage} ${uri}`);
+    const imagesToPush = image.split(',').map((i:string) => i.trim());
+    for (const imageToPush of images) {
+        const uri = `${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${imageToPush}`;
+        console.log(`Pushing local image ${imageToPush} to ${uri}`);
+        run(`docker tag ${imageToPush} ${uri}`);
         run(`docker push ${uri}`);
         imageUrl = uri;
     }
 } else if (direction == 'pull') {
-    if (image.includes(',')) {
-        throw new Error('image may not be a list of images when pulling');
+    for (const imageToPull of images) {
+        const uri = `${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${imageToPull}`;
+        console.log(`Pulling remote image ${uri} as ${imageToPull}`);
+        run(`docker pull ${uri}`);
+        run(`docker tag ${uri} ${imageToPull}`);
+        imageUrl = uri;
     }
-    const uri = `${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${image}`;
-    console.log(`Pulling ${uri} to ${localImage}`);
-    run(`docker pull ${uri}`);
-    run(`docker tag ${uri} ${localImage} `);
-    imageUrl = uri;
-} else {
+ } else {
     throw new Error(`Unknown direction ${direction}`);
 }
 
