@@ -1,52 +1,6 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 246:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getImagesToPush = void 0;
-/**
- * Returns an array of images to push.
- *
- * @param localImage - The name of the local image (e.g. my-image:1.2.3).
- * @param remoteImage - The remote image to push, or a comma delimited list of images to push.
- * @param isSemver - If true, we'll generate a list of images to push,
- *   based on the semver found in the localImage.  FOr this to work, the localImage
- *   must have a semver style tag.
- * @returns - An array of images to push.
- */
-function getImagesToPush(localImage, remoteImage, isSemver) {
-    const remoteImages = remoteImage.split(',').map((image) => image.trim());
-    const result = [];
-    for (const image of remoteImages) {
-        if (!isSemver || !localImage.indexOf(':')) {
-            result.push({
-                localImage,
-                remoteImage: image,
-            });
-        }
-        else {
-            const semverArray = localImage.split(':')[1].split('.');
-            const versions = semverArray.map((number, index) => semverArray.slice(0, index + 1).join('.'));
-            const imageWithoutTag = image.split(':')[0];
-            versions.forEach((tag) => {
-                result.push({
-                    localImage,
-                    remoteImage: `${imageWithoutTag}:${tag}`,
-                });
-            });
-        }
-    }
-    return result;
-}
-exports.getImagesToPush = getImagesToPush;
-
-
-/***/ }),
-
 /***/ 109:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -77,7 +31,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
-const images_1 = __nccwpck_require__(246);
 const utils_1 = __nccwpck_require__(918);
 const gh_ecr_login_1 = __nccwpck_require__(895);
 const AWS_ACCESS_KEY_ID = core.getInput('access-key-id', { required: true });
@@ -89,33 +42,25 @@ const direction = core.getInput('direction') || 'push';
 const isSemver = !!core.getInput('is-semver');
 const { awsAccountId } = (0, gh_ecr_login_1.loginToEcr)(awsRegion, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
 let imageUrl;
-if (localImage.includes(',')) {
-    if (!core.getInput('local-image')) {
-        throw new Error('local-image must be specified if image is a list.');
-    }
-    else {
-        throw new Error('local-image may not be a list of images.');
-    }
-}
+const images = image.split(',').map((i) => i.trim());
 if (direction === 'push') {
-    const imagesToPush = (0, images_1.getImagesToPush)(localImage, image, isSemver);
-    for (const imageToPush of imagesToPush) {
-        const uri = `${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${imageToPush.remoteImage}`;
-        console.log(`Pushing local image ${imageToPush.localImage} to ${uri}`);
-        (0, utils_1.run)(`docker tag ${imageToPush.localImage} ${uri}`);
+    const imagesToPush = image.split(',').map((i) => i.trim());
+    for (const imageToPush of images) {
+        const uri = `${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${imageToPush}`;
+        console.log(`Pushing local image ${imageToPush} to ${uri}`);
+        (0, utils_1.run)(`docker tag ${imageToPush} ${uri}`);
         (0, utils_1.run)(`docker push ${uri}`);
         imageUrl = uri;
     }
 }
 else if (direction == 'pull') {
-    if (image.includes(',')) {
-        throw new Error('image may not be a list of images when pulling');
+    for (const imageToPull of images) {
+        const uri = `${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${imageToPull}`;
+        console.log(`Pulling remote image ${uri} as ${imageToPull}`);
+        (0, utils_1.run)(`docker pull ${uri}`);
+        (0, utils_1.run)(`docker tag ${uri} ${imageToPull}`);
+        imageUrl = uri;
     }
-    const uri = `${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${image}`;
-    console.log(`Pulling ${uri} to ${localImage}`);
-    (0, utils_1.run)(`docker pull ${uri}`);
-    (0, utils_1.run)(`docker tag ${uri} ${localImage} `);
-    imageUrl = uri;
 }
 else {
     throw new Error(`Unknown direction ${direction}`);

@@ -18,7 +18,7 @@ let imageUrl;
 const images = image.split(',').map((i: string) => i.trim());
 
 if (direction === 'push') {
-    const imagesToPush = image.split(',').map((i:string) => i.trim());
+    const imagesToPush = image.split(',').map((i: string) => i.trim());
     for (const imageToPush of images) {
         const uri = `${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/${imageToPush}`;
         console.log(`Pushing local image ${imageToPush} to ${uri}`);
@@ -34,7 +34,7 @@ if (direction === 'push') {
         run(`docker tag ${uri} ${imageToPull}`);
         imageUrl = uri;
     }
- } else {
+} else {
     throw new Error(`Unknown direction ${direction}`);
 }
 
