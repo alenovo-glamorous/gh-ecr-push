@@ -2761,7 +2761,7 @@ const SOURCE_AWS_ACCESS_KEY_ID = core.getInput('source-access-key-id', { require
 const SOURCE_AWS_SECRET_ACCESS_KEY = core.getInput('source-secret-access-key', { required: true });
 const DEST_AWS_ACCESS_KEY_ID = core.getInput('dest-access-key-id', { required: true });
 const DEST_AWS_SECRET_ACCESS_KEY = core.getInput('dest-secret-access-key', { required: true });
-const awsRegion = core.getInput('region') || process.env.AWS_DEFAULT_REGION || 'us-east-1';
+const awsRegion = core.getInput('region') || process.env.AWS_DEFAULT_REGION || 'eu-west-1';
 const images = core.getInput('images', { required: true });
 const sourceLoginResult = (0, gh_ecr_login_1.loginToEcr)(awsRegion, SOURCE_AWS_ACCESS_KEY_ID, SOURCE_AWS_SECRET_ACCESS_KEY);
 const destLoginResult = (0, gh_ecr_login_1.loginToEcr)(awsRegion, DEST_AWS_ACCESS_KEY_ID, DEST_AWS_SECRET_ACCESS_KEY);
@@ -2783,8 +2783,6 @@ for (const image of imageList) {
     (0, utils_1.run)(`docker volume prune -a -f`);
     (0, utils_1.run)(`docker container prune -f`);
     (0, utils_1.run)(`docker builder prune -a -f`);
-    (0, utils_1.run)(`docker image ls`);
-    (0, utils_1.run)(`docker system df`);
 }
 
 

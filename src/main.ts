@@ -9,7 +9,7 @@ const SOURCE_AWS_SECRET_ACCESS_KEY = core.getInput('source-secret-access-key', {
 const DEST_AWS_ACCESS_KEY_ID = core.getInput('dest-access-key-id', { required: true });
 const DEST_AWS_SECRET_ACCESS_KEY = core.getInput('dest-secret-access-key', { required: true });
 
-const awsRegion = core.getInput('region') || process.env.AWS_DEFAULT_REGION || 'us-east-1';
+const awsRegion = core.getInput('region') || process.env.AWS_DEFAULT_REGION || 'eu-west-1';
 
 const images = core.getInput('images', { required: true });
 
@@ -38,8 +38,5 @@ for (const image of imageList) {
   run(`docker volume prune -a -f`);
   run(`docker container prune -f`);
   run(`docker builder prune -a -f`);
-
-  run(`docker image ls`);
-  run(`docker system df`);
 }
 
